@@ -1,0 +1,45 @@
+// src/backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SalesPipeline {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  opportunities Opportunity[]
+}
+
+model Opportunity {
+  id               String       @id @default(uuid())
+  name             String
+  status           String
+  value            Float
+  expectedClose    DateTime?
+  salesPipelineId  String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  salesPipeline    SalesPipeline @relation(fields: [salesPipelineId], references: [id])
+  funnelEvents     FunnelEvent[]
+}
+
+model FunnelEvent {
+  id             String     @id @default(uuid())
+  opportunityId  String
+  eventType      String
+  eventDate      DateTime   @default(now())
+  note           String?
+
+  opportunity    Opportunity @relation(fields: [opportunityId], references: [id])
+}
+
