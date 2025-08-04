@@ -1,32 +1,23 @@
-# Nexus CRM – Modular CRM per PMI e Team
+# NEXUS-CRM - Piattaforma Modulare per TSvapo
 
-Sistema CRM modulare, flessibile e self-hosted, sviluppato per l’ottimizzazione delle attività di marketing, vendite e customer experience.
+## Descrizione del Progetto
 
-## 📦 Struttura del progetto
+NEXUS-CRM è un sistema di Customer Relationship Management (CRM) progettato su un'architettura a microservizi per garantire scalabilità, manutenibilità e sicurezza. L'obiettivo è fornire al team di vendita e al management di TSvapo uno strumento potente per la gestione dei lead, delle trattative e dei clienti, arricchito da analisi dati avanzate.
 
-- `src/`: codice backend e frontend (moduli e app)
-- `db/`: schema e script SQL
-- `docker/`: ambienti di deploy containerizzati
-- `docs/`: documentazione tecnica e funzionale
-- `monitoring/`: strumenti per health check e logging
+Questo repository contiene il codice sorgente del frontend e dei vari microservizi che compongono la piattaforma.
 
-## 🚀 Tecnologie principali
+## Architettura
 
-- Python / FastAPI
-- PostgreSQL
-- Supabase
-- Streamlit
-- Docker / Docker Compose
+Il sistema si basa su un'architettura a microservizi gestita tramite un API Gateway. Per una descrizione dettagliata dei componenti e del loro funzionamento, fare riferimento al documento [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## 🔐 Requisiti minimi
+## Roadmap di Sviluppo
 
-- Docker e Docker Compose installati
-- Python 3.10+
-- Git
+Lo sviluppo seguirà una roadmap a fasi, focalizzata sulla consegna di valore incrementale. I dettagli delle fasi e degli obiettivi sono descritti nel documento [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md).
 
-## 🛠️ Setup rapido
+## Stack Tecnologico Principale
 
-```bash
-git clone https://github.com/AlexMechis73/nexus-modular-crm.git
-cd nexus-modular-crm
-docker-compose up --build
+* **Frontend:** SvelteKit
+* **Backend (Microservizi):** FastAPI (Python)
+* **Database:** PostgreSQL
+* **Autenticazione Iniziale:** Supabase (per velocità di sviluppo MVP)
+* **Hosting:** Hetzner Cloud VPS
