@@ -1,7 +1,8 @@
-// src/backend/prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-py"
 }
 
 datasource db {
@@ -9,37 +10,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model SalesPipeline {
-  id          String        @id @default(uuid())
-  name        String
+// MODELLO DATI FASE 0: Autenticazione e Autorizzazione (RBAC)
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // Conterrà l'hash della password
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relazione: un utente può avere più ruoli
+  roles     UserRole[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // es. "Commerciale", "CMO"
   description String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
 
-  opportunities Opportunity[]
+  // Relazioni
+  users       UserRole[]
+  permissions RolePermission[]
 }
 
-model Opportunity {
-  id               String       @id @default(uuid())
-  name             String
-  status           String
-  value            Float
-  expectedClose    DateTime?
-  salesPipelineId  String
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique // es. "view_own_leads", "view_all_deals"
+  description String?
 
-  salesPipeline    SalesPipeline @relation(fields: [salesPipelineId], references: [id])
-  funnelEvents     FunnelEvent[]
+  // Relazione
+  roles       RolePermission[]
 }
 
-model FunnelEvent {
-  id             String     @id @default(uuid())
-  opportunityId  String
-  eventType      String
-  eventDate      DateTime   @default(now())
-  note           String?
+// Tabelle "pivot" per le relazioni Many-to-Many
 
-  opportunity    Opportunity @relation(fields: [opportunityId], references: [id])
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
 }
 
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
