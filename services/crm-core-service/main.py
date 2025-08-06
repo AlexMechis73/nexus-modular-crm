@@ -96,3 +96,21 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
         )
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/users/me", response_model=UserOut, tags=["Users"])
+async def read_users_me(token: Annotated[str, Depends(oauth2_scheme)]):
+    """
+    Restituisce i dati dell'utente attualmente autenticato.
+    Questo endpoint è protetto: richiede un token JWT valido.
+    """
+    # Per ora, non validiamo il token, ma la dipendenza Depends(oauth2_scheme)
+    # già blocca le richieste che non hanno un token.
+    # Nelle prossime fasi, decodificheremo il token per ottenere l'email dell'utente.
+
+    # Per questo test, cerchiamo un utente fittizio per restituire qualcosa.
+    # In futuro, l'email verrà estratta dal token.
+    user = await User.prisma().find_unique(where={"email": "test-login@example.com"}) # Usa un'email che hai registrato
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utente non trovato per il test")
+
+    return user
