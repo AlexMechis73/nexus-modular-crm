@@ -114,3 +114,21 @@ async def read_users_me(token: Annotated[str, Depends(oauth2_scheme)]):
         raise HTTPException(status_code=404, detail="Utente non trovato per il test")
 
     return user
+
+
+@app.get("/users/me", response_model=UserOut, tags=["Users"])
+async def read_users_me(token: Annotated[str, Depends(oauth2_scheme)]):
+    """
+    Restituisce i dati dell'utente attualmente autenticato.
+    Questo endpoint è protetto: richiede un token JWT valido per accedervi.
+    """
+    # Nelle prossime fasi, qui decodificheremo il token per ottenere
+    # l'email dell'utente e recuperare i suoi dati specifici.
+
+    # Per questo primo test, restituiamo un utente fittizio per confermare
+    # che la protezione funziona. Assicurati di aver registrato questo utente.
+    user = await User.prisma().find_unique(where={"email": "primo.utente@mac.com"}) 
+    if user is None:
+        raise HTTPException(status_code=404, detail="Utente di test non trovato. Registralo prima.")
+
+    return user
