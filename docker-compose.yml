@@ -1,41 +1,32 @@
-# docker-compose.yml
 services:
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     container_name: nexus_db
     restart: always
-    environment:
-      POSTGRES_USER: nexus
-      POSTGRES_PASSWORD: nexus
-      POSTGRES_DB: nexusdb
     ports:
       - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=nexus_crm
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  fastapi:
-    build:
-      context: ./src/backend
-    container_name: nexus_api
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./src:/app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nexus_crm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  crm-core-service:
+    build: ./services/crm-core-service
+    container_name: crm_core_api
+    restart: on-failure
     ports:
       - "8000:8000"
-    depends_on:
-      - db
-
-  streamlit:
-    build:
-      context: ./src/frontend
-    container_name: nexus_ui
-    command: streamlit run main_dashboard.py --server.port 8501
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/nexus_crm
     volumes:
-      - ./src:/app
-    ports:
-      - "8501:8501"
+      - ./services/crm-core-service:/app
     depends_on:
-      - db
-
+      db:
+        condition: service_healthy
 volumes:
   postgres_data:
