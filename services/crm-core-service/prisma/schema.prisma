@@ -1,10 +1,15 @@
+// services/crm-core-service/prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-py"
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// --- MODELLI ESISTENTI (FASE 0) ---
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -12,31 +17,81 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   roles     UserRole[]
+
+  // ++ RELAZIONI FASE 1 ++
+  contacts  Contact[]
+  leads     Lead[]
 }
+
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String           @id @default(cuid())
+  name        String           @unique
   description String?
   users       UserRole[]
   permissions RolePermission[]
 }
+
 model Permission {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String           @id @default(cuid())
+  name        String           @unique
   description String?
   roles       RolePermission[]
 }
+
 model UserRole {
   userId String
   roleId String
   user   User   @relation(fields: [userId], references: [id])
   role   Role   @relation(fields: [roleId], references: [id])
+
   @@id([userId, roleId])
 }
+
 model RolePermission {
   roleId       String
   permissionId String
   role         Role       @relation(fields: [roleId], references: [id])
   permission   Permission @relation(fields: [permissionId], references: [id])
+
   @@id([roleId, permissionId])
+}
+
+
+// --- NUOVI MODELLI (FASE 1) ---
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  WON
+  LOST
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String   @unique
+  phone     String?
+  company   String?
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  leads     Lead[]
+}
+
+model Lead {
+  id        String     @id @default(cuid())
+  status    LeadStatus @default(NEW)
+  source    String?
+  notes     String?    @db.Text
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  ownerId   String
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
 }

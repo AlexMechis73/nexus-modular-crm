@@ -1,5 +1,7 @@
 # services/crm-core-service/main.py
 
+from prisma.models import User, Contact
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from fastapi import Depends
@@ -31,6 +33,22 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: str
     email: EmailStr
+
+
+class ContactBase(BaseModel):
+    firstName: str
+    lastName: str
+    email: EmailStr
+    phone: str | None = None
+    company: str | None = None
+    role: str | None = None
+
+class ContactCreate(ContactBase):
+    pass
+
+class ContactOut(ContactBase):
+    id: str
+    ownerId: str
 
 # --- Funzioni di Utilità ---
 def hash_password(password: str):
@@ -132,3 +150,31 @@ async def read_users_me(token: Annotated[str, Depends(oauth2_scheme)]):
         raise HTTPException(status_code=404, detail="Utente di test non trovato. Registralo prima.")
 
     return user
+
+
+# --- API CRUD per i Contatti ---
+
+@app.post("/contacts", response_model=ContactOut, tags=["Contacts"], status_code=status.HTTP_201_CREATED)
+async def create_contact(contact_data: ContactCreate):
+    """
+    Crea un nuovo contatto.
+    Per ora, lo associa a un utente fittizio per test.
+    """
+    # NOTA: Questo ownerId è temporaneo. Verrà sostituito con l'ID dell'utente loggato (Task 1.5)
+    mock_user_id = "cmepgih7p0001qwpncjavrmz2" # <-- SOSTITUISCI CON UN ID UTENTE VERO DAL TUO DB
+
+    new_contact = await Contact.prisma().create(
+        data={
+            **contact_data.dict(),
+            "ownerId": mock_user_id,
+        }
+    )
+    return new_contact
+
+@app.get("/contacts", response_model=list[ContactOut], tags=["Contacts"])
+async def get_all_contacts():
+    """
+    Restituisce un elenco di tutti i contatti.
+    """
+    contacts = await Contact.prisma().find_many()
+    return contacts
