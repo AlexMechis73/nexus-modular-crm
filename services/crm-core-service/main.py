@@ -64,6 +64,31 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
+# Funzione di sicurezza """"Prende il token dalla richiesta, lo decodifica, e ci restituisce l'utente corrispondente dal database"""""
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    """
+    Decodifica il token JWT, valida l'utente e lo restituisce.
+    Lancia un'eccezione se il token non è valido o l'utente non esiste.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = await User.prisma().find_unique(where={"email": email})
+    if user is None:
+        raise credentials_exception
+    return user
+
 # --- Eventi di avvio e spegnimento dell'app ---
 @app.on_event("startup")
 async def startup():
@@ -74,6 +99,8 @@ async def shutdown():
     await prisma.disconnect()
 
 # --- Endpoint API ---
+
+# Funzione register_user che gestisce la registrazione di un nuovo utente
 @app.post("/auth/register", status_code=status.HTTP_201_CREATED, response_model=UserOut, tags=["Authentication"])
 async def register_user(user_data: UserCreate):
     """
@@ -99,10 +126,12 @@ async def register_user(user_data: UserCreate):
     )
     return new_user
 
+# Funzione read_root che restituisce lo stato del servizio
 @app.get("/", tags=["Status"])
 def read_root():
     return {"status": "Nexus CRM Core Service is running"}
 
+# Funzione login_for_access_token che gestisce il login e restituisce un token JWT
 @app.post("/auth/login", tags=["Authentication"])
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     user = await User.prisma().find_unique(where={"email": form_data.username})
@@ -115,6 +144,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+# Funzione read_users_me che restituisce i dati dell'utente attualmente autenticato
 @app.get("/users/me", response_model=UserOut, tags=["Users"])
 async def read_users_me(token: Annotated[str, Depends(oauth2_scheme)]):
     """
@@ -154,27 +184,33 @@ async def read_users_me(token: Annotated[str, Depends(oauth2_scheme)]):
 
 # --- API CRUD per i Contatti ---
 
+# Funzione create_contact che crea un nuovo contatto per l'utente autenticato
 @app.post("/contacts", response_model=ContactOut, tags=["Contacts"], status_code=status.HTTP_201_CREATED)
-async def create_contact(contact_data: ContactCreate):
+async def create_contact(
+    contact_data: ContactCreate, 
+    current_user: Annotated[User, Depends(get_current_user)]
+):
     """
-    Crea un nuovo contatto.
-    Per ora, lo associa a un utente fittizio per test.
+    Crea un nuovo contatto per l'utente attualmente autenticato.
     """
-    # NOTA: Questo ownerId è temporaneo. Verrà sostituito con l'ID dell'utente loggato (Task 1.5)
-    mock_user_id = "cmepgih7p0001qwpncjavrmz2" # <-- SOSTITUISCI CON UN ID UTENTE VERO DAL TUO DB
-
     new_contact = await Contact.prisma().create(
         data={
             **contact_data.dict(),
-            "ownerId": mock_user_id,
+            "ownerId": current_user.id, # <-- USA L'ID DELL'UTENTE REALE
         }
     )
     return new_contact
 
+# Funzione get_all_contacts che restituisce i contatti dell'utente autenticato 
 @app.get("/contacts", response_model=list[ContactOut], tags=["Contacts"])
-async def get_all_contacts():
+async def get_all_contacts(
+    current_user: Annotated[User, Depends(get_current_user)]
+):
     """
-    Restituisce un elenco di tutti i contatti.
+    Restituisce un elenco dei contatti che appartengono SOLO all'utente autenticato.
     """
-    contacts = await Contact.prisma().find_many()
+    contacts = await Contact.prisma().find_many(
+        where={"ownerId": current_user.id} # <-- FILTRA I CONTATTI PER L'UTENTE
+    )
     return contacts
+
