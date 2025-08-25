@@ -1,39 +1,20 @@
-# Panoramica del Progetto NEXUS-CRM
+# Panoramica Esecutiva Progetto NEXUS-CRM
+*Ultimo Aggiornamento: 25 agosto 2025*
 
-## 1. Introduzione e Obiettivi
+## Visione: Da CRM a Hub di Intelligenza del Cliente
 
-NEXUS-CRM è un sistema di Customer Relationship Management (CRM) modulare, sicuro e performante, progettato su misura per le esigenze del team commerciale di **TSvapo**. L'obiettivo primario del progetto è fornire uno strumento open-source, veloce e a basso costo operativo per ottimizzare la gestione di clienti, prospect, pianificazione delle visite e analisi delle vendite.
+NEXUS-CRM è progettato per diventare il sistema nervoso centrale di tutte le interazioni con i clienti di TSvapo. L'obiettivo è fornire una visione a 360 gradi, tracciando ogni punto di contatto per trasformare i dati in strategie di vendita vincenti.
 
-La filosofia alla base del progetto è la **modularità**, che permette di sviluppare, integrare e mantenere le funzionalità in modo indipendente, garantendo la scalabilità futura del sistema.
+Il sistema gestirà in modo integrato due flussi operativi fondamentali:
+1.  **Flusso "Push" (Vendita Proattiva):** Supporta gli agenti commerciali nel loro lavoro di sviluppo di nuove opportunità, dalla creazione di un "lead" fino alla chiusura della trattativa, attraverso un percorso di vendita (pipeline) strutturato.
+2.  **Flusso "Pull" (Vendita Reattiva):** Permette di gestire in modo efficiente gli ordini che arrivano direttamente dai clienti, sia storici che nuovi, che contattano l'azienda di loro iniziativa.
 
-## 2. Architettura dei Moduli
+Entrambi i flussi convergono in un sistema di gestione ordini unificato, garantendo una visione completa e coerente del business.
 
-Il sistema è scomposto in moduli funzionali interconnessi, ognuno con un obiettivo specifico.
+## Architettura dei Moduli Funzionali
 
-### Modulo 0: Autenticazione & Sicurezza (Core)
-* **Stato:** ✅ **Completato**
-* **Descrizione:** Costituisce le fondamenta sicure dell'intera applicazione. Gestisce la registrazione di nuovi utenti, il processo di login tramite token JWT (JSON Web Tokens) e la protezione degli endpoint API. È la base per il futuro sistema di permessi a più livelli (RBAC).
-
-### Modulo 1: CRM Core (Clienti, Lead & Trattative)
-* **Stato:** ⬜ **In Sviluppo**
-* **Descrizione:** È il cuore funzionale del CRM. Questo modulo gestirà l'anagrafica completa di clienti e prospect (`clients`). Implementerà inoltre la logica per la gestione del funnel di vendita, tracciando le opportunità commerciali (`opportunity`) e il loro avanzamento attraverso la pipeline di vendita (`sales_pipeline`). Tutte le operazioni saranno protette e attribuite all'utente che le esegue.
-
-### Modulo 2: Visite & Percorsi
-* **Stato:** ⬜ **Pianificato**
-* **Descrizione:** Questo modulo si occuperà della pianificazione e dello scheduling delle attività e delle visite presso i clienti (`visits`). Prevede l'integrazione con il microservizio esistente per l'ottimizzazione geografica dei percorsi, fornendo agli agenti lo strumento per pianificare i loro giri in modo efficiente.
-
-### Modulo 3: Analytics & Dashboard
-* **Stato:** ⬜ **Pianificato**
-* **Descrizione:** L'obiettivo di questo modulo è trasformare i dati grezzi in insight strategici. Attraverso una dashboard, visualizzerà i KPI fondamentali per il business, come l'andamento delle vendite, lo stato dei lead e le metriche di conversione, basandosi sulla mappatura del Customer Journey.
-
-### Modulo Futuro: Loyalty
-* **Stato:** 🕓 **Pianificato (Lungo Termine)**
-* **Descrizione:** In futuro, il sistema potrà essere esteso con un modulo dedicato alla gestione di programmi di fidelizzazione per i clienti.
-
-## 3. Stack Tecnologico
-
-Il progetto si basa su uno stack tecnologico moderno e interamente open-source per massimizzare l'efficienza e minimizzare i costi.
-* **Backend:** Python con il framework **FastAPI**.
-* **Database:** **PostgreSQL**, gestito tramite l'ORM **Prisma**.
-* **Ambiente di Sviluppo e Produzione:** **Docker** e Docker Compose.
-* **Frontend (Pianificato):** **SvelteKit**.
+* **Modulo 0: Sicurezza & Accessi (Completato):** Garantisce che ogni utente acceda in modo sicuro solo alle proprie informazioni.
+* **Modulo 1: CRM Core (Completato):** Permette la gestione dell'anagrafica di contatti, delle trattative (Lead) e del ciclo di vita degli ordini.
+* **Modulo 2: Analytics & Dashboard (In Corso):** Trasformerà i dati raccolti in grafici e indicatori (KPI) per monitorare le performance.
+* **Modulo 3: Ottimizzazione Percorsi (Pianificato):** Integrerà lo strumento per pianificare in modo efficiente i giri di visite.
+* **Modulo 4: Marketing & Comunicazione (Pianificato):** In futuro, gestirà l'invio di newsletter e comunicazioni, tracciando ogni interazione.

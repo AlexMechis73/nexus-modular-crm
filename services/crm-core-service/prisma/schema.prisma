@@ -9,89 +9,162 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- MODELLI ESISTENTI (FASE 0) ---
+// --- ENTITÀ PRINCIPALI ---
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  roles     UserRole[]
-
-  // ++ RELAZIONI FASE 1 ++
-  contacts  Contact[]
-  leads     Lead[]
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  contacts     Contact[]
+  leads        Lead[]
+  orders       Order[]
+  visits       Visit[]
+  interactions Interaction[]
 }
 
-model Role {
-  id          String           @id @default(cuid())
-  name        String           @unique
-  description String?
-  users       UserRole[]
-  permissions RolePermission[]
+model Contact {
+  id                   String        @id @default(cuid())
+  firstName            String
+  lastName             String
+  email                String        @unique
+  phone                String?
+  company              String?
+  ownerId              String
+  owner                User          @relation(fields: [ownerId], references: [id])
+  leads                Lead[]
+  orders               Order[]
+  visits               Visit[]
+  interactions         Interaction[]
+  
+  newsletterSubscribed Boolean       @default(false)
+  whatsappOptIn        Boolean       @default(false)
 }
 
-model Permission {
-  id          String           @id @default(cuid())
-  name        String           @unique
-  description String?
-  roles       RolePermission[]
+// --- FLUSSO PUSH (SALES PIPELINE) ---
+
+model Lead {
+  id           String        @id @default(cuid())
+  title        String
+  status       LeadStatus    @default(NEW)
+  value        Float?
+  source       String?
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id])
+  contactId    String
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  proposals    Proposal[]
+  interactions Interaction[]
+  generatedOrder Order?
 }
 
-model UserRole {
-  userId String
-  roleId String
-  user   User   @relation(fields: [userId], references: [id])
-  role   Role   @relation(fields: [roleId], references: [id])
-
-  @@id([userId, roleId])
+model Proposal {
+  id           String        @id @default(cuid())
+  version      Int
+  status       ProposalStatus @default(DRAFT)
+  value        Float
+  filePath     String?
+  sentDate     DateTime?
+  expiresDate  DateTime?
+  leadId       String
+  lead         Lead          @relation(fields: [leadId], references: [id])
 }
 
-model RolePermission {
-  roleId       String
-  permissionId String
-  role         Role       @relation(fields: [roleId], references: [id])
-  permission   Permission @relation(fields: [permissionId], references: [id])
+// --- FLUSSO PULL (E CONVERGENZA) ---
 
-  @@id([roleId, permissionId])
+model Order {
+  id             String      @id @default(cuid())
+  orderDate      DateTime    @default(now())
+  status         OrderStatus @default(PENDING_APPROVAL)
+  totalValue     Float
+  source         OrderSource @default(MANUAL)
+  ownerId        String
+  owner          User        @relation(fields: [ownerId], references: [id])
+  contactId      String
+  contact        Contact     @relation(fields: [contactId], references: [id])
+  
+  generatedFromLeadId String?  @unique
+  generatedFromLead   Lead?    @relation(fields: [generatedFromLeadId], references: [id])
 }
 
+// --- ENTITÀ DI SUPPORTO E TRACCIAMENTO (Customer Journey) ---
 
-// --- NUOVI MODELLI (FASE 1) ---
+model Visit {
+  id                 String        @id @default(cuid())
+  status             String
+  visitDate          DateTime
+  outcome            String?
+  durationMinutes    Int?
+  productsDiscussed  String?
+  nextStep           String?
+  notes              String?       @db.Text
+  ownerId            String
+  owner              User          @relation(fields: [ownerId], references: [id])
+  contactId          String
+  contact            Contact       @relation(fields: [contactId], references: [id])
+}
+
+model Interaction {
+  id          String    @id @default(cuid())
+  type        InteractionType
+  date        DateTime  @default(now())
+  notes       String?   @db.Text
+  outcome     String?
+  channel     String?
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
+  contactId   String
+  contact     Contact   @relation(fields: [contactId], references: [id])
+  leadId      String?
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+}
+
+// --- ENUMS PER LA GRANULARITÀ ---
 
 enum LeadStatus {
   NEW
   CONTACTED
   QUALIFIED
   PROPOSAL_SENT
+  NEGOTIATING
+  FOLLOW_UP
   WON
   LOST
 }
 
-model Contact {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String   @unique
-  phone     String?
-  company   String?
-  role      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ownerId   String
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  leads     Lead[]
+enum ProposalStatus {
+  DRAFT
+  SENT
+  VIEWED
+  NEGOTIATING
+  ACCEPTED
+  REJECTED
 }
 
-model Lead {
-  id        String     @id @default(cuid())
-  status    LeadStatus @default(NEW)
-  source    String?
-  notes     String?    @db.Text
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  ownerId   String
-  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  contactId String
-  contact   Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+enum OrderStatus {
+  PENDING_APPROVAL
+  APPROVED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  INVOICED
+  CANCELLED
+}
+
+enum OrderSource {
+  MANUAL
+  FROM_LEAD
+  ECOMMERCE
+}
+
+enum InteractionType {
+  EMAIL_SENT
+  EMAIL_RECEIVED
+  CALL_MADE
+  CALL_RECEIVED
+  VISIT_PLANNED
+  VISIT_EXECUTED
+  PROPOSAL_SENT
+  NOTE_ADDED
+  ORDER_PLACED
+  ECOMMERCE_SESSION
 }
